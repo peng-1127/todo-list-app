@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Todo List - 任务清单</title>
+    <title>Todo List v2.0 - 任务清单</title>
     <style>
         * {
             margin: 0;
@@ -19,7 +19,7 @@
         }
 
         .container {
-            max-width: 500px;
+            max-width: 600px;
             margin: 0 auto;
             background: white;
             border-radius: 16px;
@@ -52,6 +52,7 @@
         .input-group {
             display: flex;
             gap: 10px;
+            margin-bottom: 10px;
         }
 
         #taskInput {
@@ -83,6 +84,72 @@
             transform: scale(1.05);
         }
 
+        /* 优先级选择器 */
+        .priority-selector {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .priority-option {
+            flex: 1;
+            padding: 8px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+
+        .priority-option:hover {
+            border-color: #667eea;
+        }
+
+        .priority-option.selected {
+            border-color: currentColor;
+            background-color: currentColor;
+            color: white;
+        }
+
+        .priority-option.high { color: #ef4444; }
+        .priority-option.medium { color: #f59e0b; }
+        .priority-option.low { color: #10b981; }
+
+        .priority-option.high.selected { background-color: #ef4444; }
+        .priority-option.medium.selected { background-color: #f59e0b; }
+        .priority-option.low.selected { background-color: #10b981; }
+
+        /* 分类选择器 */
+        .category-selector {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .category-option {
+            padding: 6px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .category-option:hover {
+            border-color: #667eea;
+        }
+
+        .category-option.selected {
+            background-color: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
         .stats {
             padding: 15px 30px;
             background: #f8f9fa;
@@ -106,10 +173,12 @@
             border-radius: 8px;
             margin-bottom: 10px;
             transition: all 0.3s;
+            border-left: 4px solid #e0e0e0;
         }
 
         .task-item:hover {
             background: #f0f0f0;
+            transform: translateX(5px);
         }
 
         .task-item.completed {
@@ -121,6 +190,22 @@
             color: #999;
         }
 
+        /* 优先级颜色 */
+        .task-item.priority-high {
+            border-left-color: #ef4444;
+            background: linear-gradient(to right, #fef2f2, #f8f9fa);
+        }
+
+        .task-item.priority-medium {
+            border-left-color: #f59e0b;
+            background: linear-gradient(to right, #fffbeb, #f8f9fa);
+        }
+
+        .task-item.priority-low {
+            border-left-color: #10b981;
+            background: linear-gradient(to right, #ecfdf5, #f8f9fa);
+        }
+
         .task-checkbox {
             width: 20px;
             height: 20px;
@@ -128,11 +213,38 @@
             cursor: pointer;
         }
 
-        .task-text {
+        .task-content {
             flex: 1;
+        }
+
+        .task-text {
             font-size: 16px;
             color: #333;
+            margin-bottom: 5px;
         }
+
+        .task-meta {
+            display: flex;
+            gap: 10px;
+            font-size: 12px;
+        }
+
+        .task-category {
+            padding: 2px 8px;
+            border-radius: 12px;
+            background-color: #e0e0e0;
+            color: #666;
+        }
+
+        .task-priority {
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+        }
+
+        .task-priority.high { background-color: #fee2e2; color: #ef4444; }
+        .task-priority.medium { background-color: #fef3c7; color: #f59e0b; }
+        .task-priority.low { background-color: #d1fae5; color: #10b981; }
 
         .delete-btn {
             padding: 6px 12px;
@@ -161,13 +273,42 @@
             margin-bottom: 20px;
             opacity: 0.5;
         }
+
+        /* 过滤器 */
+        .filter-bar {
+            padding: 15px 30px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 6px 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 20px;
+            background: white;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+
+        .filter-btn:hover {
+            border-color: #667eea;
+        }
+
+        .filter-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>📝 Todo List</h1>
-            <p>高效管理你的日常任务</p>
+            <h1>📝 Todo List v2.0</h1>
+            <p>新增优先级和分类功能！</p>
         </div>
 
         <div class="input-section">
@@ -180,6 +321,43 @@
                 >
                 <button id="addBtn">添加</button>
             </div>
+
+            <!-- 优先级选择 -->
+            <div class="priority-selector">
+                <div class="priority-option medium selected" data-priority="low">
+                    🟢 低
+                </div>
+                <div class="priority-option medium" data-priority="medium">
+                    🟡 中
+                </div>
+                <div class="priority-option high" data-priority="high">
+                    🔴 高
+                </div>
+            </div>
+
+            <!-- 分类选择 -->
+            <div class="category-selector">
+                <div class="category-option selected" data-category="work">
+                    💼 工作
+                </div>
+                <div class="category-option" data-category="personal">
+                    🏠 生活
+                </div>
+                <div class="category-option" data-category="study">
+                    📚 学习
+                </div>
+                <div class="category-option" data-category="shopping">
+                    🛒 购物
+                </div>
+            </div>
+        </div>
+
+        <div class="filter-bar">
+            <button class="filter-btn active" data-filter="all">全部</button>
+            <button class="filter-btn" data-filter="active">待完成</button>
+            <button class="filter-btn" data-filter="completed">已完成</button>
+            <button class="filter-btn" data-filter="high">🔴 高优先级</button>
+            <button class="filter-btn" data-filter="work">💼 工作</button>
         </div>
 
         <div class="stats">
@@ -200,10 +378,13 @@
     </div>
 
     <script>
-        // Todo List 应用逻辑
+        // Todo List 应用 v2.0
         class TodoApp {
             constructor() {
                 this.tasks = this.loadTasks();
+                this.currentPriority = 'medium';
+                this.currentCategory = 'work';
+                this.currentFilter = 'all';
                 this.init();
             }
 
@@ -220,16 +401,44 @@
                     if (e.key === 'Enter') this.addTask();
                 });
 
+                // 优先级选择
+                document.querySelectorAll('.priority-option').forEach(option => {
+                    option.addEventListener('click', (e) => {
+                        document.querySelectorAll('.priority-option').forEach(o => o.classList.remove('selected'));
+                        e.target.classList.add('selected');
+                        this.currentPriority = e.target.dataset.priority;
+                    });
+                });
+
+                // 分类选择
+                document.querySelectorAll('.category-option').forEach(option => {
+                    option.addEventListener('click', (e) => {
+                        document.querySelectorAll('.category-option').forEach(o => o.classList.remove('selected'));
+                        e.target.classList.add('selected');
+                        this.currentCategory = e.target.dataset.category;
+                    });
+                });
+
+                // 过滤器
+                document.querySelectorAll('.filter-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                        e.target.classList.add('active');
+                        this.currentFilter = e.target.dataset.filter;
+                        this.render();
+                    });
+                });
+
                 this.render();
             }
 
             loadTasks() {
-                const saved = localStorage.getItem('todo-tasks');
+                const saved = localStorage.getItem('todo-tasks-v2');
                 return saved ? JSON.parse(saved) : [];
             }
 
             saveTasks() {
-                localStorage.setItem('todo-tasks', JSON.stringify(this.tasks));
+                localStorage.setItem('todo-tasks-v2', JSON.stringify(this.tasks));
             }
 
             addTask() {
@@ -243,6 +452,8 @@
                     id: Date.now(),
                     text: text,
                     completed: false,
+                    priority: this.currentPriority,
+                    category: this.currentCategory,
                     createdAt: new Date().toISOString()
                 };
 
@@ -267,11 +478,61 @@
                 this.render();
             }
 
+            getFilteredTasks() {
+                let filtered = [...this.tasks];
+
+                switch (this.currentFilter) {
+                    case 'active':
+                        filtered = filtered.filter(t => !t.completed);
+                        break;
+                    case 'completed':
+                        filtered = filtered.filter(t => t.completed);
+                        break;
+                    case 'high':
+                        filtered = filtered.filter(t => t.priority === 'high');
+                        break;
+                    case 'work':
+                        filtered = filtered.filter(t => t.category === 'work');
+                        break;
+                }
+
+                return filtered;
+            }
+
             getStats() {
                 const total = this.tasks.length;
                 const completed = this.tasks.filter(t => t.completed).length;
                 const remaining = total - completed;
                 return { total, completed, remaining };
+            }
+
+            getCategoryName(id) {
+                const categories = {
+                    work: '💼 工作',
+                    personal: '🏠 生活',
+                    study: '📚 学习',
+                    shopping: '🛒 购物'
+                };
+                return categories[id] || '📌 其他';
+            }
+
+            getCategoryColor(id) {
+                const colors = {
+                    work: '#3b82f6',
+                    personal: '#10b981',
+                    study: '#8b5cf6',
+                    shopping: '#f59e0b'
+                };
+                return colors[id] || '#6b7280';
+            }
+
+            getPriorityName(priority) {
+                const names = {
+                    high: '🔴 高',
+                    medium: '🟡 中',
+                    low: '🟢 低'
+                };
+                return names[priority] || '🟡 中';
             }
 
             render() {
@@ -282,7 +543,9 @@
                 this.remainingTasks.textContent = `待完成：${stats.remaining}`;
 
                 // 渲染任务列表
-                if (this.tasks.length === 0) {
+                const filtered = this.getFilteredTasks();
+
+                if (filtered.length === 0) {
                     this.taskList.innerHTML = `
                         <div class="empty-state">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -295,15 +558,25 @@
                     return;
                 }
 
-                this.taskList.innerHTML = this.tasks.map(task => `
-                    <div class="task-item ${task.completed ? 'completed' : ''}">
+                this.taskList.innerHTML = filtered.map(task => `
+                    <div class="task-item ${task.completed ? 'completed' : ''} priority-${task.priority}">
                         <input 
                             type="checkbox" 
                             class="task-checkbox" 
                             ${task.completed ? 'checked' : ''}
                             onchange="app.toggleTask(${task.id})"
                         >
-                        <span class="task-text">${this.escapeHtml(task.text)}</span>
+                        <div class="task-content">
+                            <div class="task-text">${this.escapeHtml(task.text)}</div>
+                            <div class="task-meta">
+                                <span class="task-category" style="background-color: ${this.getCategoryColor(task.category)}20; color: ${this.getCategoryColor(task.category)}">
+                                    ${this.getCategoryName(task.category)}
+                                </span>
+                                <span class="task-priority ${task.priority}">
+                                    ${this.getPriorityName(task.priority)}
+                                </span>
+                            </div>
+                        </div>
                         <button class="delete-btn" onclick="app.deleteTask(${task.id})">删除</button>
                     </div>
                 `).join('');
