@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo List v2.1 - 截止日期功能</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 { font-size: 28px; margin-bottom: 10px; }
+        .header p { opacity: 0.9; font-size: 14px; }
+        .input-section {
+            padding: 20px 30px;
+            border-bottom: 1px solid #eee;
+        }
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        #taskInput {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        #taskInput:focus { outline: none; border-color: #667eea; }
+        #addBtn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        #addBtn:hover { transform: scale(1.05); }
+        
+        /* 优先级和分类选择器 */
+        .selectors {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        .selector-group {
+            flex: 1;
+            min-width: 150px;
+        }
+        .selector-label {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        .priority-selector, .category-selector {
+            display: flex;
+            gap: 8px;
+        }
+        .priority-option, .category-option {
+            padding: 6px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+        .priority-option:hover, .category-option:hover { border-color: #667eea; }
+        .priority-option.selected, .category-option.selected {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        
+        /* 截止日期选择器 */
+        .due-date-group {
+            margin-top: 10px;
+        }
+        #dueDateInput {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .stats {
+            padding: 15px 30px;
+            background: #f8f9fa;
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            color: #666;
+        }
+        .task-list {
+            padding: 20px 30px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .task-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 4px solid #e0e0e0;
+        }
+        .task-item:hover {
+            background: #f0f0f0;
+            transform: translateX(5px);
+        }
+        .task-item.completed { opacity: 0.6; }
+        .task-item.completed .task-text {
+            text-decoration: line-through;
+            color: #999;
+        }
+        .task-item.priority-high { border-left-color: #ef4444; }
+        .task-item.priority-medium { border-left-color: #f59e0b; }
+        .task-item.priority-low { border-left-color: #10b981; }
+        
+        .task-checkbox {
+            width: 20px;
+            height: 20px;
+            margin-right: 15px;
+            margin-top: 3px;
+            cursor: pointer;
+        }
+        .task-content { flex: 1; }
+        .task-text {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        .task-meta {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            font-size: 12px;
+        }
+        .task-category, .task-priority, .task-due-date {
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+        }
+        .task-category { background-color: #e0e0e0; color: #666; }
+        .task-priority.high { background: #fee2e2; color: #ef4444; }
+        .task-priority.medium { background: #fef3c7; color: #f59e0b; }
+        .task-priority.low { background: #d1fae5; color: #10b981; }
+        .task-due-date {
+            background: #fee2e2;
+            color: #ef4444;
+            font-weight: 600;
+        }
+        .task-due-date.overdue {
+            background: #dc2626;
+            color: white;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .delete-btn {
+            padding: 6px 12px;
+            background: #ff4757;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .delete-btn:hover { background: #ff3344; }
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+        .filter-bar {
+            padding: 15px 30px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .filter-btn {
+            padding: 6px 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 20px;
+            background: white;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .filter-btn:hover { border-color: #667eea; }
+        .filter-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📝 Todo List v2.1</h1>
+            <p>新增截止日期功能！</p>
+        </div>
+
+        <div class="input-section">
+            <div class="input-group">
+                <input type="text" id="taskInput" placeholder="输入新任务..." maxlength="100">
+                <button id="addBtn">添加</button>
+            </div>
+
+            <div class="selectors">
+                <div class="selector-group">
+                    <div class="selector-label">优先级</div>
+                    <div class="priority-selector">
+                        <div class="priority-option" data-priority="low">🟢 低</div>
+                        <div class="priority-option selected" data-priority="medium">🟡 中</div>
+                        <div class="priority-option" data-priority="high">🔴 高</div>
+                    </div>
+                </div>
+
+                <div class="selector-group">
+                    <div class="selector-label">分类</div>
+                    <div class="category-selector">
+                        <div class="category-option selected" data-category="work">💼 工作</div>
+                        <div class="category-option" data-category="personal">🏠 生活</div>
+                        <div class="category-option" data-category="study">📚 学习</div>
+                        <div class="category-option" data-category="shopping">🛒 购物</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="due-date-group">
+                <div class="selector-label">截止日期（可选）</div>
+                <input type="datetime-local" id="dueDateInput">
+            </div>
+        </div>
+
+        <div class="filter-bar">
+            <button class="filter-btn active" data-filter="all">全部</button>
+            <button class="filter-btn" data-filter="active">待完成</button>
+            <button class="filter-btn" data-filter="completed">已完成</button>
+            <button class="filter-btn" data-filter="overdue">🔴 已过期</button>
+            <button class="filter-btn" data-filter="today">📅 今天</button>
+        </div>
+
+        <div class="stats">
+            <span id="totalTasks">总任务：0</span>
+            <span id="completedTasks">已完成：0</span>
+            <span id="overdueTasks">已过期：0</span>
+        </div>
+
+        <div class="task-list" id="taskList">
+            <div class="empty-state">
+                <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 11l3 3L22 4"/>
+                    <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+                </svg>
+                <p>暂无任务，添加一个开始吧！</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class TodoApp {
+            constructor() {
+                this.tasks = this.loadTasks();
+                this.currentPriority = 'medium';
+                this.currentCategory = 'work';
+                this.currentFilter = 'all';
+                this.init();
+                this.checkOverdue();
+            }
+
+            init() {
+                this.taskInput = document.getElementById('taskInput');
+                this.addBtn = document.getElementById('addBtn');
+                this.taskList = document.getElementById('taskList');
+                this.dueDateInput = document.getElementById('dueDateInput');
+
+                this.addBtn.addEventListener('click', () => this.addTask());
+                this.taskInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.addTask();
+                });
+
+                // 优先级选择
+                document.querySelectorAll('.priority-option').forEach(option => {
+                    option.addEventListener('click', (e) => {
+                        document.querySelectorAll('.priority-option').forEach(o => o.classList.remove('selected'));
+                        e.target.classList.add('selected');
+                        this.currentPriority = e.target.dataset.priority;
+                    });
+                });
+
+                // 分类选择
+                document.querySelectorAll('.category-option').forEach(option => {
+                    option.addEventListener('click', (e) => {
+                        document.querySelectorAll('.category-option').forEach(o => o.classList.remove('selected'));
+                        e.target.classList.add('selected');
+                        this.currentCategory = e.target.dataset.category;
+                    });
+                });
+
+                // 过滤器
+                document.querySelectorAll('.filter-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                        e.target.classList.add('active');
+                        this.currentFilter = e.target.dataset.filter;
+                        this.render();
+                    });
+                });
+
+                this.render();
+            }
+
+            loadTasks() {
+                const saved = localStorage.getItem('todo-tasks-v2.1');
+                return saved ? JSON.parse(saved) : [];
+            }
+
+            saveTasks() {
+                localStorage.setItem('todo-tasks-v2.1', JSON.stringify(this.tasks));
+            }
+
+            addTask() {
+                const text = this.taskInput.value.trim();
+                if (!text) {
+                    alert('请输入任务内容！');
+                    return;
+                }
+
+                const task = {
+                    id: Date.now(),
+                    text: text,
+                    completed: false,
+                    priority: this.currentPriority,
+                    category: this.currentCategory,
+                    dueDate: this.dueDateInput.value || null,
+                    createdAt: new Date().toISOString()
+                };
+
+                this.tasks.push(task);
+                this.saveTasks();
+                this.taskInput.value = '';
+                this.dueDateInput.value = '';
+                this.render();
+            }
+
+            toggleTask(id) {
+                const task = this.tasks.find(t => t.id === id);
+                if (task) {
+                    task.completed = !task.completed;
+                    if (task.completed) {
+                        task.completedAt = new Date().toISOString();
+                    } else {
+                        task.completedAt = null;
+                    }
+                    this.saveTasks();
+                    this.render();
+                }
+            }
+
+            deleteTask(id) {
+                this.tasks = this.tasks.filter(t => t.id !== id);
+                this.saveTasks();
+                this.render();
+            }
+
+            checkOverdue() {
+                const now = new Date();
+                this.tasks.forEach(task => {
+                    if (task.dueDate && !task.completed) {
+                        const due = new Date(task.dueDate);
+                        if (due < now) {
+                            task.isOverdue = true;
+                        }
+                    }
+                });
+                this.saveTasks();
+            }
+
+            getFilteredTasks() {
+                let filtered = [...this.tasks];
+                const now = new Date();
+
+                switch (this.currentFilter) {
+                    case 'active':
+                        filtered = filtered.filter(t => !t.completed);
+                        break;
+                    case 'completed':
+                        filtered = filtered.filter(t => t.completed);
+                        break;
+                    case 'overdue':
+                        filtered = filtered.filter(t => t.isOverdue && !t.completed);
+                        break;
+                    case 'today':
+                        const today = now.toISOString().split('T')[0];
+                        filtered = filtered.filter(t => {
+                            if (!t.dueDate) return false;
+                            return t.dueDate.startsWith(today);
+                        });
+                        break;
+                }
+
+                return filtered;
+            }
+
+            getStats() {
+                const total = this.tasks.length;
+                const completed = this.tasks.filter(t => t.completed).length;
+                const overdue = this.tasks.filter(t => t.isOverdue && !t.completed).length;
+                return { total, completed, overdue };
+            }
+
+            getCategoryName(id) {
+                const categories = {
+                    work: '💼 工作',
+                    personal: '🏠 生活',
+                    study: '📚 学习',
+                    shopping: '🛒 购物'
+                };
+                return categories[id] || '📌 其他';
+            }
+
+            getCategoryColor(id) {
+                const colors = {
+                    work: '#3b82f6',
+                    personal: '#10b981',
+                    study: '#8b5cf6',
+                    shopping: '#f59e0b'
+                };
+                return colors[id] || '#6b7280';
+            }
+
+            getPriorityName(priority) {
+                const names = {
+                    high: '🔴 高',
+                    medium: '🟡 中',
+                    low: '🟢 低'
+                };
+                return names[priority] || '🟡 中';
+            }
+
+            formatDueDate(dueDate) {
+                if (!dueDate) return '';
+                
+                const due = new Date(dueDate);
+                const now = new Date();
+                const diff = due - now;
+                
+                const dateStr = due.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+                const timeStr = due.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+                
+                if (diff < 0) {
+                    return { text: `已过期 ${dateStr}`, overdue: true };
+                } else if (diff < 24 * 60 * 60 * 1000) {
+                    return { text: `今天 ${timeStr}`, overdue: false };
+                } else if (diff < 48 * 60 * 60 * 1000) {
+                    return { text: `明天 ${timeStr}`, overdue: false };
+                } else {
+                    return { text: `${dateStr} ${timeStr}`, overdue: false };
+                }
+            }
+
+            render() {
+                const stats = this.getStats();
+                document.getElementById('totalTasks').textContent = `总任务：${stats.total}`;
+                document.getElementById('completedTasks').textContent = `已完成：${stats.completed}`;
+                document.getElementById('overdueTasks').textContent = `已过期：${stats.overdue}`;
+
+                const filtered = this.getFilteredTasks();
+
+                if (filtered.length === 0) {
+                    this.taskList.innerHTML = `
+                        <div class="empty-state">
+                            <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M9 11l3 3L22 4"/>
+                                <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+                            </svg>
+                            <p>暂无任务，添加一个开始吧！</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                this.taskList.innerHTML = filtered.map(task => {
+                    const dueDateInfo = this.formatDueDate(task.dueDate);
+                    return `
+                        <div class="task-item ${task.completed ? 'completed' : ''} priority-${task.priority}">
+                            <input 
+                                type="checkbox" 
+                                class="task-checkbox" 
+                                ${task.completed ? 'checked' : ''}
+                                onchange="app.toggleTask(${task.id})"
+                            >
+                            <div class="task-content">
+                                <div class="task-text">${this.escapeHtml(task.text)}</div>
+                                <div class="task-meta">
+                                    <span class="task-category" style="background-color: ${this.getCategoryColor(task.category)}20; color: ${this.getCategoryColor(task.category)}">
+                                        ${this.getCategoryName(task.category)}
+                                    </span>
+                                    <span class="task-priority ${task.priority}">
+                                        ${this.getPriorityName(task.priority)}
+                                    </span>
+                                    ${dueDateInfo.text ? `
+                                        <span class="task-due-date ${dueDateInfo.overdue ? 'overdue' : ''}">
+                                            📅 ${dueDateInfo.text}
+                                        </span>
+                                    ` : ''}
+                                </div>
+                            </div>
+                            <button class="delete-btn" onclick="app.deleteTask(${task.id})">删除</button>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+        }
+
+        const app = new TodoApp();
+    </script>
+</body>
+</html>
